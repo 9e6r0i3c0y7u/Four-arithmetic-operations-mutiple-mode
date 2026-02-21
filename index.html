@@ -146,7 +146,7 @@
           <option value="mix">混合算式（多項 + 括號）</option>
         </select>
 
-        <div class="row">
+        <div class="row3">
           <div>
             <label>題數</label>
             <input id="totalQ" type="number" min="1" max="200" value="10">
@@ -155,8 +155,14 @@
             <label>每題限時(秒)</label>
             <input id="secPerQ" type="number" min="0" max="999" value="5">
           </div>
+          <div>
+            <label>不限時</label>
+            <div style="display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.22);">
+              <input id="noLimit" type="checkbox" style="width:18px; height:18px; margin:0;">
+              <span style="color:var(--text); font-size:14px;">開</span>
+            </div>
+          </div>
         </div>
-
         <div class="row">
           <div>
             <label>整數位數 A</label>
