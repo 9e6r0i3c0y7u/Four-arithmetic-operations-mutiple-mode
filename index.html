@@ -144,6 +144,7 @@
           <option value="int">整數（單一步驟）</option>
           <option value="dec">小數（單一步驟）</option>
           <option value="mix">混合算式（多項 + 括號）</option>
+          <option value="fracmixexpr">分數＋整數混合算式（多項）</option>
         </select>
 
         <div class="row3">
@@ -195,6 +196,16 @@
             <input id="parenPct" type="number" min="0" max="100" value="45">
           </div>
         </div>
+        <div class="row" id="fracExprRow" style="display:none">
+        <div>
+          <label>分數算式：幾個項</label>
+          <input id="fracTerms" type="number" min="3" max="7" value="4">
+        </div>
+        <div>
+          <label>括號機率(0~100)</label>
+          <input id="fracParenPct" type="number" min="0" max="100" value="40">
+        </div>
+      </div>
 
         <label id="opsLabel">運算（整數/小數模式用）</label>
         <div class="ops" id="opsPanel">
@@ -307,6 +318,81 @@ function fmtNum(x){
   if (!s.includes(".")) return s;
   return s.replace(/\.?0+$/,"");
 }
+function genFracMixExpr(){
+  const terms = clamp(parseInt($("fracTerms").value||"4"),3,7);
+  const parenPct = clamp(parseInt($("fracParenPct").value||"40"),0,100);
+  const numD = clamp(parseInt($("numDigits").value||"2"),1,3);
+  const denD = clamp(parseInt($("denDigits").value||"2"),1,3);
+
+  const ops = getEnabledOps().length ? getEnabledOps() : ["+","-","*","/"];
+
+  function randOperand(){
+    if (Math.random() < 0.5){
+      return normFrac(randWithDigits(2),1);
+    }
+    return randFrac(numD,denD);
+  }
+
+  let tokens = [];
+  for(let i=0;i<terms;i++){
+    tokens.push(randOperand());
+    if(i<terms-1){
+      tokens.push(ops[randInt(0,ops.length-1)]);
+    }
+  }
+
+  // 隨機括號
+  if(Math.random()*100 < parenPct){
+    const k = randInt(0,terms-2)*2;
+    tokens.splice(k,0,"(");
+    tokens.splice(k+4,0,")");
+  }
+
+  // 顯示文字
+  const qText = tokens.map(t=>{
+    if(typeof t==="string"){
+    if(t==="*") return "×";
+    if(t==="/") return "÷";
+      return t;
+    }
+    return fracToText(t);
+  }).join(" ");
+
+  // 計算答案（用你前面 frac 運算函數）
+  function evalTokens(tokens){
+    let stack = [];
+    let opsStack = [];
+    const prec={"+":1,"-":1,"*":2,"/":2};
+
+    function apply(){
+      const b=stack.pop();
+      const a=stack.pop();
+      const op=opsStack.pop();
+      if(op==="+") stack.push(addFrac(a,b));
+      if(op==="-"||op==="-") stack.push(subFrac(a,b));
+      if(op==="*") stack.push(mulFrac(a,b));
+      if(op==="/") stack.push(divFrac(a,b));
+    }
+
+    for(const t of tokens){
+      if(typeof t==="object") stack.push(t);
+      else if(t==="(") opsStack.push(t);
+      else if(t===")"){
+        while(opsStack.length && opsStack.at(-1)!=="(") apply();
+        opsStack.pop();
+      }else{
+        while(opsStack.length && opsStack.at(-1) !== "(" && prec[opsStack.at(-1)] >= prec[t]) apply();
+        opsStack.push(t);
+      }
+    }
+    
+  }
+  while(opsStack.length) apply();
+  return stack[0];
+  const ans = evalTokens(tokens);
+
+  return { mode:"fracmixexpr", kind:"frac", qText, ans };
+}
 
 /* ========== state ========== */
 const LS_KEY = "arith_pwa_logs_v1";
@@ -375,12 +461,13 @@ function showAnswerUI(kind){
 /* ========== mode UI ========== */
 function syncModeUI(){
   const mode = $("mode").value;
+
   $("decimalRow").style.display = (mode === "dec") ? "" : "none";
   $("mixRow").style.display = (mode === "mix") ? "" : "none";
+  $("fracExprRow").style.display = (mode === "fracmixexpr") ? "" : "none";
 
-  // 混合算式：右邊運算選單不適用（它是單一步驟才用）
   const opsOn = (mode !== "mix");
-  $("opsLabel").textContent = opsOn ? "運算（整數/小數模式用）" : "運算（混合算式不使用右側選單）";
+  $("opsLabel").textContent = opsOn ? "運算（整數/小數/分數模式用）" : "運算（混合算式不使用右側選單）";
   $("opsPanel").style.opacity = opsOn ? "1" : ".35";
   $("opsPanel").style.pointerEvents = opsOn ? "auto" : "none";
 }
@@ -560,6 +647,8 @@ function genQuestion(){
   const mode = $("mode").value;
   if (mode === "int") return genIntSingle();
   if (mode === "dec") return genDecSingle();
+  if (mode === "fracmix") return genFracMixSingle();
+  if (mode === "fracmixexpr") return genFracMixExpr();
   return genMixExpr();
 }
 
