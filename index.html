@@ -572,7 +572,8 @@ function start(){
   setStats();
 
   total = clamp(parseInt($("totalQ").value||"10"), 1, 200);
-  secPerQ = clamp(parseInt($("secPerQ").value||"5"), 0, 999);
+  const noLimit = $("noLimit").checked;
+  secPerQ = noLimit ? 0 : clamp(parseInt($("secPerQ").value||"5"), 0, 999);
 
   $("stateTitle").textContent = "進行中";
   $("stateSub").textContent = `第 0 / ${total} 題`;
@@ -748,6 +749,13 @@ $("btnCSV").addEventListener("click", ()=>{
 
 renderLogs();
 setStats();
+function syncNoLimitUI(){
+  const on = $("noLimit").checked;
+  $("secPerQ").disabled = on;
+  $("secPerQ").style.opacity = on ? ".5" : "1";
+}
+$("noLimit").addEventListener("change", syncNoLimitUI);
+syncNoLimitUI();
 </script>
 </body>
 </html>
