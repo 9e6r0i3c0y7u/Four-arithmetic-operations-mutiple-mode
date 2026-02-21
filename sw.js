@@ -1,4 +1,4 @@
-const CACHE = "arith-pwa-v2";
+const CACHE = "arith-pwa-v3";
 const ASSETS = [
   "./",
   "./index.html",
