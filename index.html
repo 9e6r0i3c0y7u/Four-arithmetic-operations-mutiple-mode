@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>四則運算練習（PWA）</title>
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <style>
+    :root{
+      --bg:#071022;
+      --card:#0f1b33;
+      --card2:#0b162c;
+      --text:#e6edf7;
+      --muted:#9fb0c9;
+      --line:#203255;
+      --btn:#2d6cff;
+      --btn2:#2a3550;
+      --ok:#27c07d;
+      --bad:#ff5c7a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:radial-gradient(1200px 600px at 30% 20%, #0e2a57 0%, var(--bg) 55%);
+      color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "Segoe UI", Arial;
+    }
+    .wrap{ max-width:1100px; margin:0 auto; padding:18px 14px 40px; }
+    h1{ margin:10px 0 16px; font-size:22px; letter-spacing:.5px; text-align:center;}
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:14px;
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .card .hd b{font-size:15px;}
+    .card .bd{ padding:14px; }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin:8px 0 6px;}
+    input, select, button{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus, select:focus{ border-color:rgba(45,108,255,.7); box-shadow:0 0 0 3px rgba(45,108,255,.18); }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .ops{
+      display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-top:8px;
+    }
+    .opbtn{
+      display:flex; align-items:center; justify-content:center;
+      padding:10px 0; border-radius:12px; border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.18);
+      cursor:pointer; user-select:none;
+      font-weight:700;
+    }
+    .opbtn[data-on="1"]{ background:rgba(45,108,255,.22); border-color:rgba(45,108,255,.55); }
+    .btn{
+      border:none; background:linear-gradient(180deg, rgba(45,108,255,1), rgba(35,84,215,1));
+      font-weight:700; cursor:pointer;
+    }
+    .btn2{ background:rgba(0,0,0,.18); cursor:pointer; }
+    .btn:active,.btn2:active{ transform:translateY(1px); }
+
+    .mainTop{
+      padding:16px 16px 8px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .titleBlock b{ font-size:18px; }
+    .titleBlock div{ color:var(--muted); margin-top:6px; font-size:13px; }
+    .pill{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.20);
+      border-radius:999px;
+      padding:8px 10px;
+      font-size:13px;
+      white-space:nowrap;
+    }
+
+    .q{
+      padding:4px 16px 14px;
+      font-size:30px; font-weight:800;
+      letter-spacing:1px;
+      min-height:44px;
+    }
+
+    .answerArea{ padding:0 16px 14px; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+    .answerArea .grow{ flex:1 1 240px; }
+    .answerArea .small{ flex:0 0 160px; }
+    .hint{ padding:0 16px 12px; color:var(--muted); font-size:13px; }
+
+    table{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:14px; }
+    thead th{
+      font-size:12px; color:var(--muted); font-weight:600;
+      padding:10px 8px; text-align:left;
+      background:rgba(0,0,0,.18);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    tbody td{
+      padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+    }
+    tbody tr:last-child td{ border-bottom:none; }
+    .tagOk{ color:var(--ok); font-weight:700;}
+    .tagBad{ color:var(--bad); font-weight:700;}
+    .footerBtns{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
+    .notice{ margin-top:10px; font-size:12px; color:var(--muted); line-height:1.5;}
+    @media (max-width: 900px){
+      .grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1>四則運算練習（網頁版 / 離線可用 / 可安裝）</h1>
+
+  <div class="grid">
+    <!-- 左側：設定 -->
+    <section class="card">
+      <div class="hd">
+        <b>設定</b>
+        <button class="btn2" id="btnClear">清空紀錄</button>
+      </div>
+      <div class="bd">
+        <label>模式</label>
+        <select id="mode">
+          <option value="int">整數（單一步驟）</option>
+          <option value="dec">小數（單一步驟）</option>
+          <option value="mix">混合算式（多項 + 括號）</option>
+        </select>
+
+        <div class="row">
+          <div>
+            <label>題數</label>
+            <input id="totalQ" type="number" min="1" max="200" value="10">
+          </div>
+          <div>
+            <label>每題限時(秒)</label>
+            <input id="secPerQ" type="number" min="0" max="999" value="5">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>整數位數 A</label>
+            <input id="digitsA" type="number" min="1" max="6" value="2">
+          </div>
+          <div>
+            <label>整數位數 B</label>
+            <input id="digitsB" type="number" min="1" max="6" value="2">
+          </div>
+        </div>
+
+        <div class="row" id="decimalRow" style="display:none">
+          <div>
+            <label>小數位數（A）</label>
+            <input id="dpA" type="number" min="0" max="4" value="1">
+          </div>
+          <div>
+            <label>小數位數（B）</label>
+            <input id="dpB" type="number" min="0" max="4" value="1">
+          </div>
+        </div>
+
+        <div class="row" id="mixRow" style="display:none">
+          <div>
+            <label>混合算式：幾個項</label>
+            <input id="mixTerms" type="number" min="3" max="7" value="4">
+          </div>
+          <div>
+            <label>混合算式：括號機率(0~100)</label>
+            <input id="parenPct" type="number" min="0" max="100" value="45">
+          </div>
+        </div>
+
+        <label id="opsLabel">運算（整數/小數模式用）</label>
+        <div class="ops" id="opsPanel">
+          <div class="opbtn" data-op="+" data-on="1">＋</div>
+          <div class="opbtn" data-op="-" data-on="1">－</div>
+          <div class="opbtn" data-op="*" data-on="1">×</div>
+          <div class="opbtn" data-op="/" data-on="1">÷</div>
+        </div>
+
+        <div class="footerBtns">
+          <button class="btn" id="btnStart">開始</button>
+          <button class="btn2" id="btnStop">停止 / 結算</button>
+        </div>
+
+        <button class="btn2" id="btnCSV" style="margin-top:10px;">下載 CSV</button>
+
+        <div class="notice">
+          小提醒：資料會存在本機（localStorage）。<br>
+          iOS：分享 → 加到主畫面；Android：瀏覽器選單 → 安裝應用程式。
+        </div>
+      </div>
+    </section>
+
+    <!-- 右側：題目與紀錄 -->
+    <section class="card">
+      <div class="mainTop">
+        <div class="titleBlock">
+          <b id="stateTitle">尚未開始</b>
+          <div id="stateSub">按「開始」後出題</div>
+        </div>
+        <div class="pill" id="timerPill">倒數：-</div>
+      </div>
+
+      <div class="q" id="question">—</div>
+
+      <div class="answerArea">
+        <div class="grow" id="ansSingleWrap">
+          <label>答案</label>
+          <input id="ansSingle" placeholder="輸入答案（整數/小數）" inputmode="decimal">
+        </div>
+
+        <div class="grow" id="ansDivWrap" style="display:none">
+          <div class="row">
+            <div>
+              <label>商</label>
+              <input id="ansQuo" placeholder="商" inputmode="numeric">
+            </div>
+            <div>
+              <label>餘數</label>
+              <input id="ansRem" placeholder="餘數" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div class="small">
+          <button class="btn" id="btnSubmit">提交</button>
+        </div>
+      </div>
+
+      <div class="hint" id="statsLine">答對：0｜答錯：0｜超時：0｜正確率：0.0%｜平均反應：0.00s</div>
+
+      <div style="padding:0 16px 16px;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>題目</th>
+              <th>你的答案</th>
+              <th>正確答案</th>
+              <th>結果</th>
+              <th>反應(秒)</th>
+              <th>時間</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ========== PWA: register service worker ========== */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+
+/* ========== helpers ========== */
+const $ = (id) => document.getElementById(id);
+const nowStr = () => new Date().toLocaleString();
+const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+const randInt = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+function randWithDigits(d){
+  // d位數正整數（避免前導0）
+  const lo = Math.pow(10, d-1);
+  const hi = Math.pow(10, d)-1;
+  return randInt(lo, hi);
+}
+function randDecimal(digits, dp){
+  // 產生有dp小數位的數（以整數縮放避免浮點誤差）
+  const base = randWithDigits(digits);
+  const scale = Math.pow(10, dp);
+  const frac = (dp===0) ? 0 : randInt(0, scale-1);
+  return (base*scale + frac)/scale;
+}
+function fmtNum(x){
+  // 顯示時去掉多餘尾0
+  const s = String(x);
+  if (!s.includes(".")) return s;
+  return s.replace(/\.?0+$/,"");
+}
+
+/* ========== state ========== */
+const LS_KEY = "arith_pwa_logs_v1";
+let running = false;
+let idx = 0;
+let total = 10;
+let secPerQ = 5;
+let timer = null;
+let tLeft = 0;
+let tStart = 0;
+
+let correct = 0, wrong = 0, timeout = 0;
+let sumRT = 0;
+
+let cur = null; // current question object
+
+function loadLogs(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); }catch{ return []; }
+}
+function saveLogs(logs){
+  localStorage.setItem(LS_KEY, JSON.stringify(logs));
+}
+function renderLogs(){
+  const logs = loadLogs();
+  const tb = $("logBody");
+  tb.innerHTML = "";
+  logs.slice().reverse().forEach((r, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${logs.length - i}</td>
+      <td>${r.q}</td>
+      <td>${r.your}</td>
+      <td>${r.ans}</td>
+      <td class="${r.ok ? "tagOk":"tagBad"}">${r.ok ? "✓":"✗"}</td>
+      <td>${r.rt}</td>
+      <td>${r.time}</td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+function setStats(){
+  const attempted = correct + wrong + timeout;
+  const acc = attempted ? (correct/attempted*100) : 0;
+  const avg = (correct+wrong) ? (sumRT/(correct+wrong)) : 0;
+  $("statsLine").textContent =
+    `答對：${correct}｜答錯：${wrong}｜超時：${timeout}｜正確率：${acc.toFixed(1)}%｜平均反應：${avg.toFixed(2)}s`;
+}
+
+function showAnswerUI(kind){
+  // kind: "single" | "div"
+  if (kind === "div"){
+    $("ansSingleWrap").style.display = "none";
+    $("ansDivWrap").style.display = "";
+    $("ansQuo").value = "";
+    $("ansRem").value = "";
+    $("ansQuo").focus();
+  }else{
+    $("ansSingleWrap").style.display = "";
+    $("ansDivWrap").style.display = "none";
+    $("ansSingle").value = "";
+    $("ansSingle").focus();
+  }
+}
+
+/* ========== mode UI ========== */
+function syncModeUI(){
+  const mode = $("mode").value;
+  $("decimalRow").style.display = (mode === "dec") ? "" : "none";
+  $("mixRow").style.display = (mode === "mix") ? "" : "none";
+
+  // 混合算式：右邊運算選單不適用（它是單一步驟才用）
+  const opsOn = (mode !== "mix");
+  $("opsLabel").textContent = opsOn ? "運算（整數/小數模式用）" : "運算（混合算式不使用右側選單）";
+  $("opsPanel").style.opacity = opsOn ? "1" : ".35";
+  $("opsPanel").style.pointerEvents = opsOn ? "auto" : "none";
+}
+$("mode").addEventListener("change", syncModeUI);
+syncModeUI();
+
+/* ========== ops toggle ========== */
+[...document.querySelectorAll(".opbtn")].forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    btn.dataset.on = (btn.dataset.on === "1") ? "0" : "1";
+  });
+});
+function getEnabledOps(){
+  const arr = [];
+  document.querySelectorAll(".opbtn").forEach(b=>{
+    if (b.dataset.on === "1") arr.push(b.dataset.op);
+  });
+  return arr;
+}
+
+/* ========== question generators ========== */
+function genIntSingle(){
+  const da = clamp(parseInt($("digitsA").value||"2"),1,6);
+  const db = clamp(parseInt($("digitsB").value||"2"),1,6);
+  const ops = getEnabledOps();
+  const op = ops.length ? ops[randInt(0, ops.length-1)] : "+";
+
+  let a, b, qText, ans, kind="single";
+
+  if (op === "+"){
+    a = randWithDigits(da);
+    b = randWithDigits(db);
+    ans = a + b;
+    qText = `${a} + ${b}`;
+  } else if (op === "-"){
+    a = randWithDigits(da);
+    b = randWithDigits(db);
+    // 讓結果多數為非負（你要可含負數也行）
+    if (b > a) [a,b] = [b,a];
+    ans = a - b;
+    qText = `${a} - ${b}`;
+  } else if (op === "*"){
+    a = randWithDigits(da);
+    b = randWithDigits(db);
+    ans = a * b;
+    qText = `${a} × ${b}`;
+  } else { // division integer with remainder
+    b = randWithDigits(db);
+    const q = randWithDigits(da);        // 商
+    const r = randInt(0, b-1);           // 餘數 < b
+    a = b*q + r;                         // 被除數
+    ans = { q, r };
+    qText = `${a} ÷ ${b}（填商與餘數）`;
+    kind = "div";
+  }
+
+  return { mode:"int", kind, qText, op, a, b, ans };
+}
+
+function genDecSingle(){
+  const da = clamp(parseInt($("digitsA").value||"2"),1,6);
+  const db = clamp(parseInt($("digitsB").value||"2"),1,6);
+  const dpA = clamp(parseInt($("dpA").value||"1"),0,4);
+  const dpB = clamp(parseInt($("dpB").value||"1"),0,4);
+
+  const ops = getEnabledOps();
+  const op = ops.length ? ops[randInt(0, ops.length-1)] : "+";
+
+  let a = randDecimal(da, dpA);
+  let b = randDecimal(db, dpB);
+
+  // 除法避免除以0（小數這裡幾乎不會0，但保險）
+  if (op === "/" && b === 0) b = 1;
+
+  let ans;
+  if (op === "+") ans = a + b;
+  else if (op === "-") ans = a - b;
+  else if (op === "*") ans = a * b;
+  else ans = a / b;
+
+  // 顯示題目時，保持小數位（看起來比較像你要的「小數模式」）
+  const qText =
+    (op === "+") ? `${fmtNum(a)} + ${fmtNum(b)}` :
+    (op === "-") ? `${fmtNum(a)} - ${fmtNum(b)}` :
+    (op === "*") ? `${fmtNum(a)} × ${fmtNum(b)}` :
+    `${fmtNum(a)} ÷ ${fmtNum(b)}`;
+
+  // 取一個合理精度來比對（避免浮點誤差）
+  const ansRounded = Math.round(ans * 1e6) / 1e6;
+
+  return { mode:"dec", kind:"single", qText, op, a, b, ans: ansRounded };
+}
+
+function shuntingYardEval(tokens){
+  // tokens: number or "+-*/()"
+  const prec = { "+":1, "-":1, "*":2, "/":2 };
+  const out = [];
+  const ops = [];
+
+  for (const t of tokens){
+    if (typeof t === "number"){
+      out.push(t);
+    }else if (t in prec){
+      while (ops.length){
+        const top = ops[ops.length-1];
+        if ((top in prec) && prec[top] >= prec[t]) out.push(ops.pop());
+        else break;
+      }
+      ops.push(t);
+    }else if (t === "("){
+      ops.push(t);
+    }else if (t === ")"){
+      while (ops.length && ops[ops.length-1] !== "(") out.push(ops.pop());
+      ops.pop(); // pop "("
+    }
+  }
+  while (ops.length) out.push(ops.pop());
+
+  // eval RPN
+  const st = [];
+  for (const t of out){
+    if (typeof t === "number") st.push(t);
+    else{
+      const b = st.pop(), a = st.pop();
+      if (t === "+") st.push(a+b);
+      if (t === "-") st.push(a-b);
+      if (t === "*") st.push(a*b);
+      if (t === "/") st.push(a/b);
+    }
+  }
+  return st[0];
+}
+
+function genMixExpr(){
+  // 混合算式：整數 + - * ，可插括號；預設不含除法（需要我再加）
+  const da = clamp(parseInt($("digitsA").value||"2"),1,6);
+  const terms = clamp(parseInt($("mixTerms").value||"4"),3,7);
+  const parenPct = clamp(parseInt($("parenPct").value||"45"),0,100);
+
+  const nums = Array.from({length:terms}, ()=> randWithDigits(da));
+  const ops = Array.from({length:terms-1}, ()=> ["+","-","*"][randInt(0,2)]);
+
+  // 組 tokens：n op n op n ...
+  let tokens = [];
+  for (let i=0;i<terms;i++){
+    tokens.push(nums[i]);
+    if (i<terms-1) tokens.push(ops[i]);
+  }
+
+  // 隨機加一組括號：(a op b) op c ... 或 a op (b op c)
+  if (Math.random()*100 < parenPct){
+    // 選一個括號包住的起點（包兩個數 + 一個運算）
+    const pairCount = terms-1; // 有多少個 (num op num) 可選
+    const k = randInt(0, pairCount-1);
+    // tokens index: num(0) op(1) num(2) op(3) num(4)...
+    const leftIdx = k*2;       // num
+    const rightIdx = leftIdx+2;// num
+    tokens.splice(leftIdx, 0, "(");
+    tokens.splice(rightIdx+2, 0, ")");
+  }
+
+  const qText = tokens.map(t=>{
+    if (t === "*") return "×";
+    return String(t);
+  }).join(" ");
+
+  // 用真正運算符做 eval（把 × 換回 *）
+  const evalTokens = tokens.map(t => t === "*" ? "*" : t);
+  const ans = shuntingYardEval(evalTokens);
+
+  // 混合算式：答案通常整數，但會因括號與減法可能出負數 → 保留整數顯示
+  const ansInt = Math.round(ans); // 理論上是整數（目前沒除法）
+  return { mode:"mix", kind:"single", qText, ans: ansInt };
+}
+
+function genQuestion(){
+  const mode = $("mode").value;
+  if (mode === "int") return genIntSingle();
+  if (mode === "dec") return genDecSingle();
+  return genMixExpr();
+}
+
+/* ========== run control ========== */
+function start(){
+  running = true;
+  idx = 0;
+  correct = wrong = timeout = 0;
+  sumRT = 0;
+  setStats();
+
+  total = clamp(parseInt($("totalQ").value||"10"), 1, 200);
+  secPerQ = clamp(parseInt($("secPerQ").value||"5"), 0, 999);
+
+  $("stateTitle").textContent = "進行中";
+  $("stateSub").textContent = `第 0 / ${total} 題`;
+  nextQ();
+}
+function stop(){
+  running = false;
+  if (timer) clearInterval(timer);
+  timer = null;
+  $("timerPill").textContent = "倒數：-";
+  $("stateTitle").textContent = "已停止";
+  $("stateSub").textContent = `完成：${idx} / ${total}`;
+  $("question").textContent = "—";
+  showAnswerUI("single");
+}
+
+function nextQ(){
+  idx++;
+  if (idx > total){
+    stop();
+    $("stateTitle").textContent = "已完成";
+    return;
+  }
+  cur = genQuestion();
+  $("stateSub").textContent = `第 ${idx} / ${total} 題`;
+  $("question").textContent = cur.qText;
+
+  // UI: division needs 2 inputs
+  showAnswerUI(cur.kind === "div" ? "div" : "single");
+
+  // timer
+  if (timer) clearInterval(timer);
+  if (secPerQ > 0){
+    tLeft = secPerQ;
+    $("timerPill").textContent = `倒數：${tLeft}`;
+    timer = setInterval(()=>{
+      tLeft--;
+      $("timerPill").textContent = `倒數：${tLeft}`;
+      if (tLeft <= 0){
+        clearInterval(timer);
+        timer = null;
+        onTimeout();
+      }
+    }, 1000);
+  } else {
+    $("timerPill").textContent = "倒數：∞";
+  }
+  tStart = performance.now();
+}
+
+function pushLog(q, your, ans, ok, rt){
+  const logs = loadLogs();
+  logs.push({
+    q,
+    your,
+    ans,
+    ok,
+    rt,
+    time: nowStr()
+  });
+  saveLogs(logs);
+  renderLogs();
+}
+
+function onTimeout(){
+  if (!running) return;
+  timeout++;
+  setStats();
+
+  const ansText = (cur.kind === "div")
+    ? `商=${cur.ans.q}, 餘數=${cur.ans.r}`
+    : String(cur.ans);
+
+  pushLog(cur.qText, "（超時）", ansText, false, "-");
+  nextQ();
+}
+
+function parseUserSingle(mode){
+  const s = $("ansSingle").value.trim();
+  if (s === "") return null;
+  const v = Number(s);
+  if (!Number.isFinite(v)) return null;
+  if (mode === "int" || mode === "mix"){
+    // 整數 / 混合：要求整數
+    if (!Number.isInteger(v)) return null;
+    return v;
+  }
+  // 小數模式
+  return v;
+}
+
+function submit(){
+  if (!running || !cur) return;
+
+  if (timer){ clearInterval(timer); timer = null; }
+  const rt = ((performance.now() - tStart)/1000).toFixed(2);
+
+  let ok = false;
+  let yourText = "";
+  let ansText = "";
+
+  if (cur.kind === "div"){
+    const qStr = $("ansQuo").value.trim();
+    const rStr = $("ansRem").value.trim();
+    const q = Number(qStr), r = Number(rStr);
+    if (!Number.isInteger(q) || !Number.isInteger(r) || qStr==="" || rStr===""){
+      alert("除法請輸入整數的「商」與「餘數」");
+      return;
+    }
+    ok = (q === cur.ans.q && r === cur.ans.r);
+    yourText = `商=${q}, 餘數=${r}`;
+    ansText = `商=${cur.ans.q}, 餘數=${cur.ans.r}`;
+  } else {
+    const v = parseUserSingle(cur.mode);
+    if (v === null){
+      alert(cur.mode === "dec" ? "請輸入數字（可小數）" : "請輸入整數");
+      return;
+    }
+    if (cur.mode === "dec"){
+      // 小數：用容差比對（避免浮點誤差）
+      ok = Math.abs(v - cur.ans) < 1e-6;
+      yourText = fmtNum(v);
+      ansText = fmtNum(cur.ans);
+    } else {
+      ok = (v === cur.ans);
+      yourText = String(v);
+      ansText = String(cur.ans);
+    }
+  }
+
+  if (ok) correct++; else wrong++;
+  sumRT += Number(rt);
+  setStats();
+
+  pushLog(cur.qText, yourText, ansText, ok, rt);
+  nextQ();
+}
+
+/* ========== events ========== */
+$("btnStart").addEventListener("click", start);
+$("btnStop").addEventListener("click", stop);
+$("btnSubmit").addEventListener("click", submit);
+$("ansSingle").addEventListener("keydown", (e)=>{ if(e.key==="Enter") submit(); });
+$("ansQuo").addEventListener("keydown", (e)=>{ if(e.key==="Enter") $("ansRem").focus(); });
+$("ansRem").addEventListener("keydown", (e)=>{ if(e.key==="Enter") submit(); });
+
+$("btnClear").addEventListener("click", ()=>{
+  if (!confirm("確定要清空紀錄？")) return;
+  localStorage.removeItem(LS_KEY);
+  renderLogs();
+});
+
+$("btnCSV").addEventListener("click", ()=>{
+  const logs = loadLogs();
+  const header = ["題目","你的答案","正確答案","結果","反應(秒)","時間"];
+  const rows = logs.map(r=>[
+    r.q, r.your, r.ans, (r.ok ? "正確":"錯誤"), r.rt, r.time
+  ]);
+  const csv = [header, ...rows]
+    .map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "四則運算紀錄.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+renderLogs();
+setStats();
+</script>
+</body>
+</html>
