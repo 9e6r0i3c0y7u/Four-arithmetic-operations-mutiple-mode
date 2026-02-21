@@ -441,9 +441,11 @@ if(Math.random()*100 < parenPct){
   return stack[0];
   const ans = evalTokens(tokens);
 
-  return { mode:"fracmixexpr", kind:"frac", qText, ans };
+  if(!qText || qText.trim()===""){
+  return genMixExpr();  // fallback 避免卡住
 }
 
+return { mode:"fracmixexpr", kind:"frac", qText, ans };
 /* ========== state ========== */
 const LS_KEY = "arith_pwa_logs_v1";
 let running = false;
